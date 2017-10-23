@@ -1,9 +1,33 @@
-#+BEGIN_SRC python :var fname="fig/heating.png" :results file :exports both
+#+name: pre
+#+BEGIN_SRC python
   import pandas as pd
+  import numpy as np
+  import matplotlib.pyplot as plt
+
+  plt.rc('text', usetex=True)
+  plt.rc('font', family='serif')
+  plt.style.use('ggplot')
+
+
 
   heating = pd.read_csv('data/heating-curve.csv').set_index('t')
+  cooling = pd.read_csv('data/cooling.csv').set_index('t')
 
-  ax = heating.plot()
+  def toTemp(v):
+      return 525672 / (149 * np.log(v) - 149 * np.log(2.5 - v) + 1764)
+
+  heating['T'] = heating.apply(lambda row: toTemp(row['V']), axis=1)
+  cooling['T'] = cooling.apply(lambda row: toTemp(row['V']), axis=1)
+#+END_SRC
+
+#+RESULTS: pre
+: None
+
+#+BEGIN_SRC python :var fname="fig/heating.png" :results file :exports both :noweb yes
+  <<pre>>
+  ax = heating.plot(y='T')
+  ax.set_ylim(260,270)
+  ax.set_title('Heating Curve')
 
   ax.figure.savefig(fname)
   return fname
@@ -11,3 +35,24 @@
 
 #+RESULTS:
 [[file:fig/heating.png]]
+
+#+BEGIN_SRC python :noweb yes :results output
+<<pre>>
+print(heating['T'].max())
+#+END_SRC
+
+#+RESULTS:
+: 444.160453424
+
+#+BEGIN_SRC python :var fname="fig/cooling.png" :results file :exports both :noweb yes
+  <<pre>>
+  ax = cooling.plot(y='T')
+  ax.set_title('Cooling Curve')
+  ax.set_ylim(262,266)
+
+  ax.figure.savefig(fname)
+  return fname
+#+END_SRC
+
+#+RESULTS:
+[[file:fig/cooling.png]]
