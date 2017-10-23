@@ -1,0 +1,13 @@
+#+BEGIN_SRC python :var fname="fig/heating.png" :results file :exports both
+  import pandas as pd
+
+  heating = pd.read_csv('data/heating-curve.csv').set_index('t')
+
+  ax = heating.plot()
+
+  ax.figure.savefig(fname)
+  return fname
+#+END_SRC
+
+#+RESULTS:
+[[file:fig/heating.png]]
