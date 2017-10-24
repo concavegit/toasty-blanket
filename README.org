@@ -14,7 +14,7 @@
   cooling = pd.read_csv('data/cooling.csv').set_index('t')
 
   def toTemp(v):
-      return 525672 / (149 * np.log(v) - 149 * np.log(2.5 - v) + 1764)
+      return 525672 / (149 * np.log(1000 * v / (2.5 - v)) - 447 * np.log(10) + 1764)
 
   heating['T'] = heating.apply(lambda row: toTemp(row['V']), axis=1)
   cooling['T'] = cooling.apply(lambda row: toTemp(row['V']), axis=1)
@@ -56,3 +56,56 @@ print(heating['T'].max())
 
 #+RESULTS:
 [[file:fig/cooling.png]]
+
+
+#+BEGIN_SRC python :noweb yes :results output
+  <<pre>>
+  T0 = 305.8
+  T_max = 308.6876
+  r = 30
+
+
+  def make_system(f, t_end):
+      '''
+      The system has a blanket (DataFrame), a frequency, a time, and the
+      section the blanket is currently on.
+      '''
+      return pd.Series({'status': pd.DataFrame({'T1': [T0], 'T2': [T0], 'T3': [
+          T0], 'T4': [T0]}), 'freq': f, 't': 0, 't_end': t_end, 'current': 0, 'r': r})
+
+
+  def update_func(system, t):
+      new = [0,0,0,0]
+      for section in np.arange(4):
+          if section != system.current:
+              new[section] = cool(system.status[system.status.columns[section]].tail(1))
+              new[section] = 1
+          else:
+              new[section] = heat(system.status[system.status.columns[section]].tail(1))
+
+
+
+  def run_simulation(system):
+      for t in np.arange(system.t_end - 1):
+          if t % (system.t_end  // system.freq) == 0:
+              if system.current == 3:
+                  system.current = 0
+              else:
+                  system.current += 1
+
+          update_func(system, t)
+
+
+  def cool(t):
+      return t + (-r * (t - T0))
+
+
+  def heat(t):
+      return t + (-r * (t - T_max))
+
+
+  system = make_system(2,10)
+  run_simulation(system)
+#+END_SRC
+
+#+RESULTS:
