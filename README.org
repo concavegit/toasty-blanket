@@ -58,11 +58,12 @@ print(heating['T'].max())
 [[file:fig/cooling.png]]
 
 
-#+BEGIN_SRC python :noweb yes :results output
+#+BEGIN_SRC python :noweb yes :results file :var fname="fig/sim.png"
   <<pre>>
   T0 = 305.8
   T_max = 308.6876
-  r = 30
+  r_heating = 1 / 535
+  r_cooling = 1 / 206
 
 
   def make_system(f, t_end):
@@ -71,17 +72,17 @@ print(heating['T'].max())
       section the blanket is currently on.
       '''
       return pd.Series({'status': pd.DataFrame({'T1': [T0], 'T2': [T0], 'T3': [
-          T0], 'T4': [T0]}), 'freq': f, 't': 0, 't_end': t_end, 'current': 0, 'r': r})
+          T0], 'T4': [T0]}), 'freq': f, 't': 0, 't_end': t_end, 'current': 0})
 
 
   def update_func(system, t):
       new = [0,0,0,0]
       for section in np.arange(4):
           if section != system.current:
-              new[section] = cool(system.status[system.status.columns[section]].tail(1))
-              new[section] = 1
+              new[section] = cool(system.status[system.status.columns[section]][t])
           else:
-              new[section] = heat(system.status[system.status.columns[section]].tail(1))
+              new[section] = heat(system.status[system.status.columns[section]][t])
+      system.status.loc[t + 1] = new
 
 
 
@@ -97,15 +98,35 @@ print(heating['T'].max())
 
 
   def cool(t):
-      return t + (-r * (t - T0))
+      return t + (-r_cooling * (t - T0))
 
 
   def heat(t):
-      return t + (-r * (t - T_max))
+      return t + (-r_heating * (t - T_max))
+
+  def sweep_fs(f0, f_max, timespan):
+      results = pd.DataFrame({"T":[]})
+      for f in np.arange(f0, f_max):
+          system = make_system(f, timespan)
+          run_simulation(system)
+          results.loc[f] = system.status.tail(1).sum().sum() / 4
+      return results
 
 
-  system = make_system(2,10)
-  run_simulation(system)
+
+  # system = make_system(4,1000)
+  # run_simulation(system)
+  # ax = system.status.plot()
+  ax = sweep_fs(1, 20, 20).plot()
+  ax.figure.savefig(fname)
+  return fname
+  # print
+  # print(sweep_fs(1, 10, 10))
+  # print(system.status)
 #+END_SRC
 
 #+RESULTS:
+[[file:fig/sim.png]]
+
+cooling time constant: 206
+heating: 535
