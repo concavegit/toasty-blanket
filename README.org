@@ -12,9 +12,11 @@
 
   heating = pd.read_csv('data/heating-curve.csv').set_index('t')
   cooling = pd.read_csv('data/cooling.csv').set_index('t')
+  heatingTemps = pd.read_csv('data/heatingTemps.csv').set_index('t')
+  coolingTemps = pd.read_csv('data/coolingTemps.csv').set_index('t')
 
   def toTemp(v):
-      return 525672 / (149 * np.log(1000 * v / (2.5 - v)) - 447 * np.log(10) + 1764)
+      return 525672 / (149 * np.log(v) - 149 * np.log(2.5 - v) + 1764)
 
   heating['T'] = heating.apply(lambda row: toTemp(row['V']), axis=1)
   cooling['T'] = cooling.apply(lambda row: toTemp(row['V']), axis=1)
@@ -62,8 +64,8 @@ print(heating['T'].max())
   <<pre>>
   T0 = 305.8
   T_max = 308.6876
-  r_heating = 1 / 535
-  r_cooling = 1 / 206
+  r_heating = 0.0013
+  r_cooling = 0.00065
 
 
   def make_system(f, t_end):
@@ -112,12 +114,21 @@ print(heating['T'].max())
           results.loc[f] = system.status.tail(1).sum().sum() / 4
       return results
 
+  coolingMod = pd.DataFrame({"T":[307.9]})
+  for t in range(1500):
+      coolingMod.loc[t + 1] = cool(coolingMod.loc[t])
 
-
-  # system = make_system(4,1000)
-  # run_simulation(system)
-  # ax = system.status.plot()
-  ax = sweep_fs(1, 20, 20).plot()
+  system = make_system(1,2000)
+  run_simulation(system)
+  ax = system.status.T2.plot()
+  heatingTemps.plot(ax=ax)
+  coolingTemps.plot(ax=ax)
+  coolingMod.plot(ax=ax)
+  # ax = sweep_fs(1, 20, 20).plot()
+  ax.legend(['Model Heating', 'Actual Heating', 'Model Cooling', 'Actual Cooling'])
+  ax.set_title('Model and Actual Temperature over Time')
+  ax.set_xlabel('Time ($s$)')
+  ax.set_ylabel('Kelvin ($K$)')
   ax.figure.savefig(fname)
   return fname
   # print
