@@ -22,7 +22,7 @@ cooling['T'] = cooling.apply(lambda row: toTemp(row['V']), axis=1)
 T0 = 305.8
 T_max = 308.6876
 r_heating = 0.0013
-r_cooling = 0.00065
+r_cooling = 0.002
 
 
 def make_system(f, t_end):
@@ -80,7 +80,7 @@ def sweep_fs(f0, f_max, timespan):
 # coolingMod.plot(ax=ax)
 ax = sweep_fs(1, 60, 3600).plot()
 # ax.legend(['Model Heating', 'Actual Heating', 'Model Cooling', 'Actual Cooling'])
-ax.set_title('Frequency Sweep for duration of 1 Hour')
+ax.set_title('Frequency Sweep for duration of 1 Hour, Artificially Cool Faster')
 ax.set_xlabel('Frequency ($moves/hour$)')
 ax.set_ylabel('Final Temperature ($K$)')
 ax.legend().set_visible(False)
